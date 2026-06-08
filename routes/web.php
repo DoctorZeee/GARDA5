@@ -20,7 +20,8 @@ Route::middleware('guest')->group(function () {
 });
 
 // Authenticated Routes (Jalur setelah login)
-Route::middleware('auth')->group(function () {
+// Authenticated Routes (Jalur setelah login)
+Route::middleware(['auth', 'no-cache'])->group(function () {
     // Universal dashboard redirect (otomatis arahkan sesuai role)
     Route::get('/dashboard', [HomeController::class, 'index'])->name('dashboard');
 

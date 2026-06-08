@@ -5,32 +5,98 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Models\HealthLog;
-use App\Models\AuditLog; // Pastikan model ini di-import
+use App\Models\AuditLog;
 use App\Models\Wilayah;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Schema;
 
 class DashboardController extends Controller
 {
     public function index()
     {
-        // 1. KPI Utama
-        $totalWarga = User::where('role', 'user')->count();
-        $totalLog = HealthLog::count();
-        $avgGaram = HealthLog::where('konsumsi_garam', 'more')->count();
+        // Cache Key Version 4 untuk menghapus sisa error sebelumnya
+        $ttl = 60 * 15; // 15 Menit
 
-        // 2. Data Grafik Batang (Status Hipertensi)
-        $hipertensiStats = HealthLog::select('status_hipertensi', DB::raw('count(*) as total'))
-            ->groupBy('status_hipertensi')->pluck('total', 'status_hipertensi');
+        // --- [ SECTION 1: KPI UTAMA ] ---
+        $kpi = Cache::remember('admin_kpi_v4', $ttl, function () {
+            
+            // Ekstraksi nilai Sistolik dari string "120/80" menggunakan PHP Map
+            $tekananDarah = HealthLog::whereNotNull('tekanan_darah')->pluck('tekanan_darah');
+            $sistolikList = $tekananDarah->map(function ($td) {
+                $parts = explode('/', $td);
+                return (isset($parts[0]) && is_numeric($parts[0])) ? (int) $parts[0] : null;
+            })->filter();
 
-        // 3. Data Grafik Garis (Tren Kesehatan 7 Hari Terakhir)
-        $trenKesehatan = HealthLog::select(DB::raw('DATE(created_at) as date'), DB::raw('count(*) as count'))
-            ->groupBy('date')->orderBy('date', 'desc')->take(7)->get();
+            $avgSistolik = $sistolikList->count() > 0 ? round($sistolikList->average(), 1) : 0;
 
-        // 4. Data per Wilayah
-        $wilayahStats = Wilayah::withCount('users')->get();
+            return [
+                'total_warga' => User::where('role', 'user')->count(),
+                'total_log' => HealthLog::count(),
+                'high_sodium' => HealthLog::where('konsumsi_garam', 'more')->count(), // Diperbaiki ke 'more' sesuai enum
+                'avg_sistolik' => $avgSistolik,
+            ];
+        });
 
-        $auditLogs = AuditLog::latest()->take(10)->get();
+        // --- [ SECTION 2: DEMOGRAFI & FISIOLOGIS ] ---
+        // Distribusi Jenis Kelamin (Fail-safe jika kolom jenis_kelamin belum ada di tabel users)
+        $genderStats = Cache::remember('admin_gender_stats_v4', $ttl, function () {
+            if (Schema::hasColumn('users', 'jenis_kelamin')) {
+                return User::where('role', 'user')
+                    ->select('jenis_kelamin', DB::raw('count(*) as total'))
+                    ->groupBy('jenis_kelamin')
+                    ->pluck('total', 'jenis_kelamin')
+                    ->toArray();
+            }
+            return ['Laki-laki' => 0, 'Perempuan' => 0]; // Default dummy jika kolom tidak ada
+        });
 
-        return view('admin.dashboard', compact('totalWarga', 'totalLog', 'avgGaram', 'hipertensiStats', 'trenKesehatan', 'wilayahStats', 'auditLogs'));
+        // --- [ SECTION 3: KLINIS & STATUS HIPERTENSI ] ---
+        $hipertensiStats = Cache::remember('admin_hipertensi_v4', $ttl, function () {
+            return HealthLog::select('status_hipertensi', DB::raw('count(*) as total'))
+                ->groupBy('status_hipertensi')
+                ->pluck('total', 'status_hipertensi')
+                ->toArray();
+        });
+
+        // --- [ SECTION 4: SPASIAL (WILAYAH BINAAN) ] ---
+        $wilayahStats = Cache::remember('admin_wilayah_v4', $ttl, function () {
+            return Wilayah::withCount(['users' => function ($query) {
+                $query->where('role', 'user');
+            }])->get()->toArray();
+        });
+
+        // --- [ SECTION 5: TREN WAKTU (7 HARI TERAKHIR) ] ---
+        $trenKesehatan = Cache::remember('admin_tren_v4', $ttl, function () {
+            return HealthLog::select(DB::raw('DATE(created_at) as date'), DB::raw('count(*) as count'))
+                ->groupBy('date')
+                ->orderBy('date', 'asc')
+                ->take(7)
+                ->get()
+                ->toArray();
+        });
+
+        // --- [ SECTION 6: REAL-TIME STREAM (Tanpa Cache) ] ---
+        $currentRole = Auth::user()->role;
+        $auditLogs = AuditLog::with('user:id,name,role')
+            ->when($currentRole !== 'admin', function ($query) {
+                return $query->whereHas('user', function($q) {
+                    $q->where('role', '!=', 'admin');
+                });
+            })
+            ->latest()
+            ->take(8)
+            ->get();
+
+        return view('admin.dashboard', compact(
+            'kpi',
+            'genderStats',
+            'hipertensiStats',
+            'wilayahStats',
+            'trenKesehatan',
+            'auditLogs',
+            'currentRole'
+        ));
     }
 }

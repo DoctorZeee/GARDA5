@@ -3,7 +3,6 @@
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
-use App\Http\Middleware\RoleMiddleware;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -12,9 +11,13 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware) {
+        // Inject Security Headers untuk semua request secara global
+        $middleware->append(\App\Http\Middleware\SecurityHeaders::class);
+
         // Registrasi alias untuk route
         $middleware->alias([
-            'role' => RoleMiddleware::class,
+            'role' => \App\Http\Middleware\RoleMiddleware::class,
+            'no-cache' => \App\Http\Middleware\PreventBackHistory::class, // Alias keamanan session
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {
