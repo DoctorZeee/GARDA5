@@ -120,8 +120,8 @@
     @endif
 </div>
 
-<script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
-<script>
+<script src="https://code.jquery.com/jquery-3.7.0.min.js" nonce="{{ csp_nonce() }}"></script>
+<script nonce="{{ csp_nonce() }}">
 $(document).ready(function () {
     $('#filterStatus').on('change', function () {
         const val = $(this).val();

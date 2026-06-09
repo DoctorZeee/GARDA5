@@ -44,20 +44,22 @@ class HealthLogController extends Controller
 
         DB::transaction(function () use ($request, $user, $statusHipertensi, $tekananDarah) {
             HealthLog::create([
-                'user_id'          => $user->id,
-                'tekanan_darah'    => $tekananDarah ?: null,
-                'berat_badan'      => $request->berat_badan,
-                'tinggi_badan'     => $request->tinggi_badan,
-                'konsumsi_garam'   => $request->konsumsi_garam,
-                'status_hipertensi'=> $statusHipertensi,
-                'keluhan'          => $request->keluhan,
-                'tanggal_input'    => Carbon::today(),
+                'user_id'           => $user->id,
+                'tekanan_darah'     => $tekananDarah ?: null,
+                'berat_badan'       => $request->berat_badan,
+                'tinggi_badan'      => $request->tinggi_badan,
+                'konsumsi_garam'    => $request->konsumsi_garam,
+                'status_hipertensi' => $statusHipertensi,
+                'keluhan'           => $request->keluhan,
+                'tanggal_input'     => Carbon::today(),
             ]);
 
-            // Berikan reward +1 Poin dan +1 Daun (pastikan relasi point ada)
+            // FIX: Gunakan satu DB::update untuk kedua kolom sekaligus (hindari dua round trip)
             if ($user->point) {
-                $user->point()->increment('total_points', 1);
-                $user->point()->increment('total_leaves', 1);
+                $user->point()->update([
+                    'total_points' => DB::raw('total_points + 1'),
+                    'total_leaves' => DB::raw('total_leaves + 1'),
+                ]);
             } else {
                 $user->point()->create([
                     'total_points' => 1,

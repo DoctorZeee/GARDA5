@@ -58,7 +58,7 @@
         </div>
     </div>
 
-    <script>
+    <script nonce="{{ csp_nonce() }}">
         document.addEventListener("DOMContentLoaded", function() {
             const togglePasswordBtn = document.getElementById('togglePasswordBtn');
             const passwordInput = document.getElementById('passwordInput');

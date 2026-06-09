@@ -12,14 +12,13 @@ Route::middleware('guest')->group(function () {
 
     // Login Routes
     Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
-    Route::post('/login', [AuthController::class, 'authenticate'])->middleware('throttle:5,1'); // maks 5 kali per menit
+    Route::post('/login', [AuthController::class, 'authenticate'])->middleware('throttle:5,1');
 
     // Register Routes
     Route::get('/register', [AuthController::class, 'showRegister'])->name('register');
-    Route::post('/register', [AuthController::class, 'processRegister']);
+    Route::post('/register', [AuthController::class, 'processRegister'])->middleware('throttle:10,1');
 });
 
-// Authenticated Routes (Jalur setelah login)
 // Authenticated Routes (Jalur setelah login)
 Route::middleware(['auth', 'no-cache'])->group(function () {
     // Universal dashboard redirect (otomatis arahkan sesuai role)

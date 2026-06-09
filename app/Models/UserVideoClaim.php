@@ -5,21 +5,20 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-class AuditLog extends Model
+class UserVideoClaim extends Model
 {
-    // FIX: Tambah route, method, user_agent ke fillable
     protected $fillable = [
         'user_id',
-        'action',
-        'description',
-        'ip_address',
-        'route',
-        'method',
-        'user_agent',
+        'video_id',
     ];
 
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function video(): BelongsTo
+    {
+        return $this->belongsTo(Video::class);
     }
 }

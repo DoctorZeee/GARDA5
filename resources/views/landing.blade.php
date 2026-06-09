@@ -38,8 +38,8 @@
         </div>
     </div>
 
-    <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
-    <script>
+    <script src="https://unpkg.com/aos@2.3.1/dist/aos.js" nonce="{{ csp_nonce() }}"></script>
+    <script nonce="{{ csp_nonce() }}">
         AOS.init({ duration: 1000, once: true });
     </script>
 </body>

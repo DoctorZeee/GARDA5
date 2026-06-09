@@ -155,7 +155,7 @@
 </div>
 @endif
 
-<script>
+<script nonce="{{ csp_nonce() }}">
 function gabungTD() {
     var s = document.getElementById('sistolik').value;
     var d = document.getElementById('diastolik').value;

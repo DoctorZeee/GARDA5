@@ -9,14 +9,23 @@ use Symfony\Component\HttpFoundation\Response;
 
 class RoleMiddleware
 {
-    public function handle(Request $request, Closure $next, string $role): Response
+    /**
+     * FIX: Support multi-role → role:admin,puskesmas
+     * Sebelumnya hanya strict equality satu role.
+     */
+    public function handle(Request $request, Closure $next, string ...$roles): Response
     {
         if (! Auth::check()) {
             return redirect()->route('login');
         }
 
-        if (Auth::user()->role !== $role) {
-            // Jika mencoba akses route role lain, lempar ke 403 Forbidden
+        $allowed = collect($roles)
+            ->flatMap(fn ($r) => explode(',', $r))
+            ->map(fn ($r) => trim($r))
+            ->filter()
+            ->toArray();
+
+        if (! in_array(Auth::user()->role, $allowed, strict: true)) {
             abort(403, 'Akses Ditolak. Anda tidak memiliki izin mengakses halaman ini.');
         }
 

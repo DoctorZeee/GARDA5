@@ -159,8 +159,8 @@
 
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js" nonce="{{ csp_nonce() }}"></script>
+<script nonce="{{ csp_nonce() }}">
 const trenLabels = {!! json_encode(array_column($trenKesehatan, 'date')) !!};
 const trenData   = {!! json_encode(array_column($trenKesehatan, 'count')) !!};
 

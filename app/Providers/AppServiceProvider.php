@@ -15,10 +15,9 @@ class AppServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
-        // Mendefinisikan Gates untuk digunakan di Blade template (misal: @can('is-admin'))
-        Gate::define('is-admin', fn (User $user) => $user->role === 'admin');
+        Gate::define('is-admin',     fn (User $user) => $user->role === 'admin');
         Gate::define('is-puskesmas', fn (User $user) => $user->role === 'puskesmas');
-        Gate::define('is-kader', fn (User $user) => $user->role === 'kader');
-        Gate::define('is-user', fn (User $user) => $user->role === 'user');
+        Gate::define('is-kader',     fn (User $user) => $user->role === 'kader');
+        Gate::define('is-user',      fn (User $user) => $user->role === 'user');
     }
 }
