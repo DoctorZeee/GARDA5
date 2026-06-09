@@ -1,58 +1,426 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# GARDA 5 (Gerakan Sadar Dosis Garam)
 
 <p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
+  <img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="300" alt="GARDA 5">
 </p>
 
-## About Laravel
+## Tentang GARDA 5
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+GARDA 5 (Gerakan Sadar Dosis Garam) adalah aplikasi berbasis Laravel yang dirancang untuk membantu edukasi dan pemantauan konsumsi garam masyarakat melalui sistem yang terintegrasi.
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+---
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+# Persyaratan Sistem
 
-## Learning Laravel
+Pastikan perangkat Anda telah menginstal:
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+| Software        | Versi Minimum          |
+| --------------- | ---------------------- |
+| PHP             | 8.3                    |
+| Composer        | Terbaru                |
+| Node.js         | 20+                    |
+| NPM             | Terbaru                |
+| MySQL / MariaDB | MySQL 8+ / MariaDB 10+ |
+| Git             | Terbaru (opsional)     |
 
-In addition, [Laracasts](https://laracasts.com) contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+---
 
-You can also watch bite-sized lessons with real-world projects on [Laravel Learn](https://laravel.com/learn), where you will be guided through building a Laravel application from scratch while learning PHP fundamentals.
+# Cara Mendapatkan Source Code
 
-## Agentic Development
-
-Laravel's predictable structure and conventions make it ideal for AI coding agents like Claude Code, Cursor, and GitHub Copilot. Install [Laravel Boost](https://laravel.com/docs/ai) to supercharge your AI workflow:
+## Opsi 1 (Disarankan) - Clone Repository
 
 ```bash
-composer require laravel/boost --dev
-
-php artisan boost:install
+git clone https://github.com/DoctorZeee/GARDA5.git
+cd GARDA5
 ```
 
-Boost provides your agent 15+ tools and skills that help agents build Laravel applications while following best practices.
+---
 
-## Contributing
+## Opsi 2 - Download ZIP
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+1. Buka repository GitHub.
+2. Klik tombol **Code**.
+3. Pilih **Download ZIP**.
+4. Ekstrak file ZIP.
+5. Masuk ke folder project.
 
-## Code of Conduct
+Contoh:
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+```bash
+cd GARDA5
+```
 
-## Security Vulnerabilities
+---
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+# Instalasi Project
 
-## License
+## 1. Install Dependency PHP
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+```bash
+composer install
+```
+
+Jika project sudah menyertakan folder vendor dan ingin memastikan semua package terbaru:
+
+```bash
+composer update
+```
+
+---
+
+## 2. Install Dependency Frontend
+
+```bash
+npm install
+```
+
+atau
+
+```bash
+npm ci
+```
+
+---
+
+## 3. Membuat File Environment
+
+Salin file environment:
+
+### Linux / macOS
+
+```bash
+cp .env.example .env
+```
+
+### Windows CMD
+
+```cmd
+copy .env.example .env
+```
+
+### Windows PowerShell
+
+```powershell
+Copy-Item .env.example .env
+```
+
+---
+
+## 4. Generate Laravel APP_KEY
+
+```bash
+php artisan key:generate
+```
+
+---
+
+# Konfigurasi Database
+
+Buat database baru, misalnya:
+
+```text
+garda5
+```
+
+Kemudian buka file:
+
+```text
+.env
+```
+
+Ubah bagian berikut:
+
+```env
+DB_CONNECTION=mysql
+DB_HOST=127.0.0.1
+DB_PORT=3306
+DB_DATABASE=garda5
+DB_USERNAME=root
+DB_PASSWORD=
+```
+
+Sesuaikan dengan konfigurasi database Anda.
+
+---
+
+# Menjalankan Migration
+
+Jalankan:
+
+```bash
+php artisan migrate
+```
+
+Jika project memiliki seeder:
+
+```bash
+php artisan db:seed
+```
+
+atau
+
+```bash
+php artisan migrate --seed
+```
+
+---
+
+# Membuat Symbolic Link Storage
+
+```bash
+php artisan storage:link
+```
+
+---
+
+# Build Asset Frontend
+
+## Mode Development
+
+```bash
+npm run dev
+```
+
+## Mode Production
+
+```bash
+npm run build
+```
+
+---
+
+# Menjalankan Server Laravel
+
+```bash
+php artisan serve
+```
+
+Secara default aplikasi dapat diakses melalui:
+
+```text
+http://127.0.0.1:8000
+```
+
+---
+
+# Menjalankan Queue (Jika Digunakan)
+
+```bash
+php artisan queue:work
+```
+
+---
+
+# Membersihkan Cache Laravel
+
+Jika terjadi error konfigurasi atau perubahan environment:
+
+```bash
+php artisan optimize:clear
+```
+
+Atau secara manual:
+
+```bash
+php artisan config:clear
+php artisan cache:clear
+php artisan route:clear
+php artisan view:clear
+php artisan event:clear
+```
+
+---
+
+# Menjalankan Project di Berbagai Sistem Operasi
+
+## Windows
+
+Gunakan salah satu:
+
+* Laragon
+* XAMPP
+* WAMP
+* PHP Native
+
+Kemudian jalankan:
+
+```bash
+composer install
+npm install
+copy .env.example .env
+php artisan key:generate
+php artisan migrate
+npm run dev
+php artisan serve
+```
+
+---
+
+## Linux
+
+Install:
+
+* PHP
+* Composer
+* MySQL/MariaDB
+* Node.js
+* NPM
+
+Lalu jalankan:
+
+```bash
+composer install
+npm install
+cp .env.example .env
+php artisan key:generate
+php artisan migrate
+npm run dev
+php artisan serve
+```
+
+---
+
+## macOS
+
+Pastikan Homebrew telah terpasang.
+
+Install dependency yang diperlukan kemudian jalankan:
+
+```bash
+composer install
+npm install
+cp .env.example .env
+php artisan key:generate
+php artisan migrate
+npm run dev
+php artisan serve
+```
+
+---
+
+# Update Source Code
+
+Jika menggunakan Git:
+
+```bash
+git pull origin main
+composer install
+npm install
+php artisan migrate
+npm run build
+```
+
+---
+
+# Struktur Project
+
+```text
+app/
+bootstrap/
+config/
+database/
+public/
+resources/
+routes/
+storage/
+tests/
+artisan
+composer.json
+package.json
+```
+
+---
+
+# Troubleshooting
+
+## Error Composer
+
+```bash
+composer install
+composer dump-autoload
+```
+
+---
+
+## Error APP_KEY
+
+```bash
+php artisan key:generate
+```
+
+---
+
+## Error Permission (Linux/macOS)
+
+```bash
+chmod -R 775 storage
+chmod -R 775 bootstrap/cache
+```
+
+---
+
+## Error Vite
+
+```bash
+npm install
+npm run dev
+```
+
+---
+
+## Error Cache
+
+```bash
+php artisan optimize:clear
+```
+
+---
+
+# Mode Production (Disarankan)
+
+Set pada file `.env`:
+
+```env
+APP_ENV=production
+APP_DEBUG=false
+```
+
+Kemudian jalankan:
+
+```bash
+php artisan optimize
+npm run build
+```
+
+---
+
+# Kontribusi
+
+1. Fork repository
+2. Buat branch baru
+
+```bash
+git checkout -b feature/nama-fitur
+```
+
+3. Commit perubahan
+
+```bash
+git commit -m "Menambahkan fitur baru"
+```
+
+4. Push
+
+```bash
+git push origin feature/nama-fitur
+```
+
+5. Buat Pull Request.
+
+---
+
+# License
+
+Project GARDA 5 dikembangkan untuk kebutuhan edukasi dan pelayanan kesehatan masyarakat.
+
+© GARDA 5 Project.
