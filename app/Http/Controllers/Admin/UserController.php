@@ -30,14 +30,19 @@ class UserController extends Controller
         $validated = $request->validated();
         $validated['password'] = Hash::make($validated['password']);
 
+        // Ambil role dari validated SEBELUM create, lalu set eksplisit
+        // karena 'role' tidak ada di $fillable untuk mencegah mass assignment
+        $role = $validated['role'];
+        unset($validated['role']);
+
         $user = User::create($validated);
+        $user->role = $role;
+        $user->save();
 
         if ($user->role === 'user') {
             $user->point()->create(['total_points' => 0, 'total_leaves' => 0]);
         }
 
-        // FIX: Pakai AuditLogger::log() bukan AuditLog::create() langsung
-        // → route, method, user_agent kini ikut tercatat
         AuditLogger::log('CREATE_USER', "Admin mendaftarkan akun baru NIK: {$user->nik} ({$user->role})");
 
         return redirect()->route('admin.users.index')->with('success', 'Pengguna berhasil ditambahkan.');
@@ -59,13 +64,18 @@ class UserController extends Controller
             unset($validated['password']);
         }
 
+        // Set role eksplisit, bukan lewat mass assignment
+        $role = $validated['role'];
+        unset($validated['role']);
+
         $user->update($validated);
+        $user->role = $role;
+        $user->save();
 
         if ($user->role === 'user' && !$user->point) {
             $user->point()->create(['total_points' => 0, 'total_leaves' => 0]);
         }
 
-        // FIX: Pakai AuditLogger::log()
         AuditLogger::log('UPDATE_USER', "Admin memperbarui data akun NIK: {$user->nik}");
 
         return redirect()->route('admin.users.index')->with('success', 'Data pengguna berhasil diperbarui.');
@@ -76,7 +86,6 @@ class UserController extends Controller
         $nik = $user->nik;
         $user->delete();
 
-        // FIX: Pakai AuditLogger::log()
         AuditLogger::log('DELETE_USER', "Admin menghapus akun NIK: {$nik}");
 
         return redirect()->route('admin.users.index')->with('success', 'Pengguna berhasil dihapus.');

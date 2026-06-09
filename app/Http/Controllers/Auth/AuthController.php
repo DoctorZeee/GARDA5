@@ -23,12 +23,14 @@ class AuthController extends Controller
     public function processRegister(RegisterRequest $request): RedirectResponse
     {
         $validated = $request->validated();
-
-        // Langsung simpan karena $validated sudah berisi 'wilayah_id' yang valid
         $validated['password'] = Hash::make($validated['password']);
-        $validated['role'] = 'user';
 
+        // Role di-set secara eksplisit SETELAH create (tidak lewat fillable)
+        // untuk mencegah privilege escalation
         $user = User::create($validated);
+        $user->role = 'user';
+        $user->save();
+
         $user->point()->create(['total_points' => 0, 'total_leaves' => 0]);
 
         Auth::login($user);
@@ -47,19 +49,20 @@ class AuthController extends Controller
         $request->authenticate();
         $request->session()->regenerate();
 
+        // FIX: tambah flash message jika role tidak dikenali
         return match (Auth::user()->role) {
-            'admin' => redirect()->intended(route('admin.dashboard')),
+            'admin'     => redirect()->intended(route('admin.dashboard')),
             'puskesmas' => redirect()->intended(route('puskesmas.dashboard')),
-            'kader' => redirect()->intended(route('kader.dashboard')),
-            'user' => redirect()->intended(route('user.dashboard')),
-            default => redirect('/'),
+            'kader'     => redirect()->intended(route('kader.dashboard')),
+            'user'      => redirect()->intended(route('user.dashboard')),
+            default     => redirect('/')->with('error', 'Peran akun tidak dikenali. Hubungi administrator.'),
         };
     }
 
     public function logout(Request $request): RedirectResponse
     {
         Auth::logout();
-        
+
         $request->session()->invalidate();
         $request->session()->regenerateToken();
 

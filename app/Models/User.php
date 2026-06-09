@@ -14,10 +14,18 @@ class User extends Authenticatable
 {
     use HasFactory, Notifiable;
 
+    /**
+     * 'role' sengaja TIDAK ada di $fillable.
+     * Mencegah privilege escalation jika di masa depan ada
+     * $user->update($request->validated()) tanpa membuang field role.
+     * Perubahan role harus dilakukan secara eksplisit:
+     *   $user->role = $request->role;
+     *   $user->save();
+     */
     protected $fillable = [
-        'nik', 'nama_lengkap', 'email', 'password', 'role',
+        'nik', 'nama_lengkap', 'email', 'password',
         'tempat_lahir', 'tanggal_lahir', 'jenis_kelamin',
-        'alamat', 'berat_badan', 'tekanan_darah', 'wilayah_id'
+        'alamat', 'berat_badan', 'tekanan_darah', 'wilayah_id',
     ];
 
     protected $hidden = [
@@ -36,9 +44,6 @@ class User extends Authenticatable
         ];
     }
 
-    /**
-     * Accessor umur — aman jika tanggal_lahir null.
-     */
     public function getUmurAttribute(): ?int
     {
         if (empty($this->attributes['tanggal_lahir'])) {
@@ -47,16 +52,11 @@ class User extends Authenticatable
         return Carbon::parse($this->attributes['tanggal_lahir'])->age;
     }
 
-    /**
-     * Alias 'name' agar kompatibel dengan kode legacy yang memakai ->name
-     * (misal di AuditLog: User::with('user:id,name,role'))
-     */
     public function getNameAttribute(): string
     {
         return $this->nama_lengkap ?? '';
     }
 
-    // Relationships
     public function wilayah(): BelongsTo
     {
         return $this->belongsTo(Wilayah::class);
