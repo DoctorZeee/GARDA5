@@ -4,7 +4,6 @@ namespace App\Http\Controllers\Kader;
 
 use App\Http\Controllers\Controller;
 use App\Models\HealthLog;
-use Illuminate\Http\Request;
 
 class DashboardController extends Controller
 {
@@ -12,15 +11,24 @@ class DashboardController extends Controller
     {
         $kader = auth()->user();
 
-        // SECURITY: Kader HANYA BISA menarik data Log Kesehatan dari User yang wilayah_id-nya sama.
-        // PERFORMA: Menggunakan Eager Loading untuk 'user', 'user.wilayah', dan 'user.point' (Cegah N+1)
-        $wargaLogs = HealthLog::with(['user.wilayah', 'user.point'])
-            ->whereHas('user', function ($query) use ($kader) {
-                $query->where('role', 'user')
-                      ->where('wilayah_id', $kader->wilayah_id);
+        // Pastikan kader punya wilayah_id sebelum query
+        if (!$kader->wilayah_id) {
+            return view('kader.dashboard', [
+                'wargaLogs' => collect(),
+                'kader'     => $kader,
+            ])->with('error', 'Akun Anda belum terdaftar di wilayah manapun. Hubungi Admin.');
+        }
+
+        // SECURITY: Filter hanya warga di wilayah kader
+        // PERFORMA: eager load user.wilayah & user.point untuk hindari N+1
+        // Pagination server-side agar tidak kirim ribuan baris ke browser
+        $wargaLogs = HealthLog::with(['user:id,nama_lengkap,wilayah_id', 'user.point'])
+            ->whereHas('user', function ($q) use ($kader) {
+                $q->where('role', 'user')
+                  ->where('wilayah_id', $kader->wilayah_id);
             })
             ->orderBy('tanggal_input', 'desc')
-            ->get(); // Untuk DataTable Client-side, kita kirimkan seluruh data hasil filter wilayah.
+            ->paginate(25);
 
         return view('kader.dashboard', compact('wargaLogs', 'kader'));
     }

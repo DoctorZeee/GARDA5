@@ -9,9 +9,28 @@
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
-<body class="mobile-first-body">
-    <div class="mobile-container">
+<body class="user-page-body">
+
+    <nav class="user-topbar">
+        <div class="brand">GARDA <span>5</span></div>
+        <form action="{{ route('logout') }}" method="POST">
+            @csrf
+            <button type="submit" class="topbar-logout">
+                <i class="fa-solid fa-right-from-bracket"></i> Keluar
+            </button>
+        </form>
+    </nav>
+
+    <main class="user-main">
+        @if(session('success'))
+            <div class="user-alert user-alert-success">✅ {{ session('success') }}</div>
+        @endif
+        @if(session('error'))
+            <div class="user-alert user-alert-error">❌ {{ session('error') }}</div>
+        @endif
+
         @yield('content')
-    </div>
+    </main>
+
 </body>
 </html>

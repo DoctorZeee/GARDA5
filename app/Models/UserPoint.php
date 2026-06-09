@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class UserPoint extends Model
 {
@@ -12,4 +13,16 @@ class UserPoint extends Model
         'total_leaves',
         'last_checkin_date',
     ];
+
+    protected function casts(): array
+    {
+        return [
+            'last_checkin_date' => 'date',
+        ];
+    }
+
+    public function user(): BelongsTo
+    {
+        return $this->belongsTo(User::class);
+    }
 }

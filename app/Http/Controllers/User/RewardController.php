@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\User;
 
 use App\Http\Controllers\Controller;
+use App\Models\Video;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
 
@@ -12,33 +13,36 @@ class RewardController extends Controller
     {
         $pointRecord = auth()->user()->point;
 
+        if (!$pointRecord) {
+            return back()->with('error', 'Data poin tidak ditemukan. Hubungi admin.');
+        }
+
         if ($pointRecord->last_checkin_date === Carbon::today()->toDateString()) {
             return back()->with('error', 'Anda sudah melakukan check-in hari ini.');
         }
 
         $pointRecord->update([
             'last_checkin_date' => Carbon::today()->toDateString(),
-            'total_points' => $pointRecord->total_points + 1,
-            'total_leaves' => $pointRecord->total_leaves + 1,
+            'total_points'      => $pointRecord->total_points + 1,
+            'total_leaves'      => $pointRecord->total_leaves + 1,
         ]);
 
-        return back()->with('success', 'Check-In Sukses! +1 Poin berhasil diklaim.');
+        return back()->with('success', 'Check-In Sukses! +1 Poin berhasil diklaim. 🌿');
     }
 
-    public function claimVideo(Request $request, $videoId)
+    public function claimVideo(Request $request, Video $video)
     {
-        // Dalam implementasi nyata, kita catat di tabel user_video_logs
-        // Untuk MVP ini, kita berikan poin langsung. Validasi disederhanakan.
         $pointRecord = auth()->user()->point;
-        
-        $pointRecord->increment('total_points', 1);
-        $pointRecord->increment('total_leaves', 1);
 
-        return response()->json([
-            'status' => 'success',
-            'message' => 'Poin edukasi berhasil diklaim!',
-            'new_points' => $pointRecord->total_points,
-            'new_leaves' => $pointRecord->total_leaves
-        ]);
+        if (!$pointRecord) {
+            return back()->with('error', 'Data poin tidak ditemukan. Hubungi admin.');
+        }
+
+        $reward = max(1, (int) $video->points_reward);
+
+        $pointRecord->increment('total_points', $reward);
+        $pointRecord->increment('total_leaves', $reward);
+
+        return back()->with('success', "Poin edukasi +{$reward} berhasil diklaim! 🎉");
     }
 }

@@ -15,8 +15,8 @@ class User extends Authenticatable
     use HasFactory, Notifiable;
 
     protected $fillable = [
-        'nik', 'nama_lengkap', 'email', 'password', 'role', 
-        'tempat_lahir', 'tanggal_lahir', 'jenis_kelamin', 
+        'nik', 'nama_lengkap', 'email', 'password', 'role',
+        'tempat_lahir', 'tanggal_lahir', 'jenis_kelamin',
         'alamat', 'berat_badan', 'tekanan_darah', 'wilayah_id'
     ];
 
@@ -30,16 +30,30 @@ class User extends Authenticatable
     {
         return [
             'email_verified_at' => 'datetime',
-            'password' => 'hashed',
-            'tanggal_lahir' => 'date',
-            'berat_badan' => 'decimal:2',
+            'password'          => 'hashed',
+            'tanggal_lahir'     => 'date',
+            'berat_badan'       => 'decimal:2',
         ];
     }
 
-    // Accessor Umur (Dynamic calculation)
-    public function getUmurAttribute(): int
+    /**
+     * Accessor umur — aman jika tanggal_lahir null.
+     */
+    public function getUmurAttribute(): ?int
     {
+        if (empty($this->attributes['tanggal_lahir'])) {
+            return null;
+        }
         return Carbon::parse($this->attributes['tanggal_lahir'])->age;
+    }
+
+    /**
+     * Alias 'name' agar kompatibel dengan kode legacy yang memakai ->name
+     * (misal di AuditLog: User::with('user:id,name,role'))
+     */
+    public function getNameAttribute(): string
+    {
+        return $this->nama_lengkap ?? '';
     }
 
     // Relationships

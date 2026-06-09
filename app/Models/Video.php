@@ -12,4 +12,12 @@ class Video extends Model
         'points_reward',
         'is_active',
     ];
+
+    protected function casts(): array
+    {
+        return [
+            'is_active'     => 'boolean',
+            'points_reward' => 'integer',
+        ];
+    }
 }

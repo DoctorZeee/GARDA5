@@ -69,10 +69,10 @@ class DashboardController extends Controller
 
         // --- [ SECTION 5: TREN WAKTU (7 HARI TERAKHIR) ] ---
         $trenKesehatan = Cache::remember('admin_tren_v4', $ttl, function () {
-            return HealthLog::select(DB::raw('DATE(created_at) as date'), DB::raw('count(*) as count'))
+            return HealthLog::select(DB::raw('DATE(tanggal_input) as date'), DB::raw('count(*) as count'))
+                ->where('tanggal_input', '>=', now()->subDays(6)->toDateString())
                 ->groupBy('date')
                 ->orderBy('date', 'asc')
-                ->take(7)
                 ->get()
                 ->toArray();
         });
