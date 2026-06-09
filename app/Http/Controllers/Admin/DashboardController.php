@@ -16,13 +16,10 @@ class DashboardController extends Controller
 {
     public function index()
     {
-        // Cache Key Version 4 untuk menghapus sisa error sebelumnya
         $ttl = 60 * 15; // 15 Menit
 
         // --- [ SECTION 1: KPI UTAMA ] ---
         $kpi = Cache::remember('admin_kpi_v4', $ttl, function () {
-            
-            // Ekstraksi nilai Sistolik dari string "120/80" menggunakan PHP Map
             $tekananDarah = HealthLog::whereNotNull('tekanan_darah')->pluck('tekanan_darah');
             $sistolikList = $tekananDarah->map(function ($td) {
                 $parts = explode('/', $td);
@@ -34,13 +31,12 @@ class DashboardController extends Controller
             return [
                 'total_warga' => User::where('role', 'user')->count(),
                 'total_log' => HealthLog::count(),
-                'high_sodium' => HealthLog::where('konsumsi_garam', 'more')->count(), // Diperbaiki ke 'more' sesuai enum
+                'high_sodium' => HealthLog::where('konsumsi_garam', 'more')->count(),
                 'avg_sistolik' => $avgSistolik,
             ];
         });
 
         // --- [ SECTION 2: DEMOGRAFI & FISIOLOGIS ] ---
-        // Distribusi Jenis Kelamin (Fail-safe jika kolom jenis_kelamin belum ada di tabel users)
         $genderStats = Cache::remember('admin_gender_stats_v4', $ttl, function () {
             if (Schema::hasColumn('users', 'jenis_kelamin')) {
                 return User::where('role', 'user')
@@ -49,7 +45,7 @@ class DashboardController extends Controller
                     ->pluck('total', 'jenis_kelamin')
                     ->toArray();
             }
-            return ['Laki-laki' => 0, 'Perempuan' => 0]; // Default dummy jika kolom tidak ada
+            return ['Laki-laki' => 0, 'Perempuan' => 0];
         });
 
         // --- [ SECTION 3: KLINIS & STATUS HIPERTENSI ] ---
@@ -79,7 +75,7 @@ class DashboardController extends Controller
 
         // --- [ SECTION 6: REAL-TIME STREAM (Tanpa Cache) ] ---
         $currentRole = Auth::user()->role;
-        $auditLogs = AuditLog::with('user:id,name,role')
+        $auditLogs = AuditLog::with('user')  // Tidak membatasi kolom, ambil semua
             ->when($currentRole !== 'admin', function ($query) {
                 return $query->whereHas('user', function($q) {
                     $q->where('role', '!=', 'admin');

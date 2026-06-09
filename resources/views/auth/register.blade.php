@@ -54,6 +54,13 @@
                 </div>
 
                 <div class="row g-3 mb-3">
+                    <div class="col-md-6">
+                        <label class="form-label fw-bold small">Konfirmasi Kata Sandi</label>
+                        <input type="password" name="password_confirmation" class="form-control" required>
+                    </div>
+                </div>
+
+                <div class="row g-3 mb-3">
                     <div class="col-md-4">
                         <label class="form-label fw-bold small">Tempat Lahir</label>
                         <input type="text" name="tempat_lahir" class="form-control" value="{{ old('tempat_lahir') }}"
