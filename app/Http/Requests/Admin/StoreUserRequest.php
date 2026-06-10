@@ -14,18 +14,33 @@ class StoreUserRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'nik'           => ['required', 'string', 'size:16', 'unique:users,nik', 'regex:/^[0-9]+$/'],
-            'nama_lengkap'  => ['required', 'string', 'max:255'],
-            'email'         => ['required', 'email', 'unique:users,email'],
-            'password'      => ['required', 'string', 'min:8', 'confirmed'],
-            'role'          => ['required', 'in:admin,puskesmas,kader,user'],
-            'tempat_lahir'  => ['required', 'string', 'max:100'],
-            'tanggal_lahir' => ['required', 'date', 'before_or_equal:today'],
-            'jenis_kelamin' => ['required', 'in:L,P'],
-            'alamat'        => ['required', 'string'],
-            'berat_badan'   => ['required', 'numeric', 'min:10', 'max:300'],
-            'tekanan_darah' => ['nullable', 'string', 'regex:/^\d{2,3}\/\d{2,3}$/'],
-            'wilayah_id'    => ['nullable', 'exists:wilayahs,id'],
+            'nik'                   => ['required', 'string', 'size:16', 'unique:users,nik', 'regex:/^[0-9]+$/'],
+            'nama_lengkap'          => ['required', 'string', 'max:255'],
+            'email'                 => ['required', 'email:rfc,dns', 'unique:users,email', 'max:255'],
+            // PERBAIKAN: password wajib ada + confirmed (wajib diisi saat create)
+            'password'              => ['required', 'string', 'min:8', 'confirmed'],
+            'password_confirmation' => ['required', 'string'],
+            'role'                  => ['required', 'in:admin,puskesmas,kader,user'],
+            'tempat_lahir'          => ['required', 'string', 'max:100'],
+            'tanggal_lahir'         => ['required', 'date', 'before_or_equal:today'],
+            'jenis_kelamin'         => ['required', 'in:L,P'],
+            'alamat'                => ['required', 'string', 'max:1000'],
+            'berat_badan'           => ['required', 'numeric', 'min:10', 'max:300'],
+            'tekanan_darah'         => ['nullable', 'string', 'regex:/^\d{2,3}\/\d{2,3}$/'],
+            'wilayah_id'            => ['nullable', 'exists:wilayahs,id'],
+        ];
+    }
+
+    public function messages(): array
+    {
+        return [
+            'password.confirmed'              => 'Konfirmasi password tidak cocok.',
+            'password_confirmation.required'  => 'Konfirmasi password wajib diisi.',
+            'nik.size'                         => 'NIK harus tepat 16 digit.',
+            'nik.regex'                        => 'NIK hanya boleh berisi angka.',
+            'nik.unique'                       => 'NIK sudah terdaftar di sistem.',
+            'email.unique'                     => 'Email sudah digunakan akun lain.',
+            'tekanan_darah.regex'              => 'Format tekanan darah tidak valid. Contoh: 120/80',
         ];
     }
 }

@@ -1,3 +1,8 @@
+{{--
+    PERUBAHAN dari versi sebelumnya:
+    - Tambah link "Kelola Video" di sidebar admin
+    - Tidak ada perubahan lain, semua fitur lama tetap utuh
+--}}
 <!DOCTYPE html>
 <html lang="id">
 <head>
@@ -5,7 +10,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>GARDA 5 - Control Room Super Admin</title>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
-    
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&family=Inter:wght@400;500&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
@@ -26,6 +30,10 @@
                 </a>
                 <a href="{{ route('admin.users.index') }}" class="nav-link-item {{ request()->routeIs('admin.users.*') ? 'active' : '' }}">
                     <i class="fa-solid fa-users-gear"></i> Kelola Pengguna
+                </a>
+                {{-- BARU: Menu video --}}
+                <a href="{{ route('admin.videos.index') }}" class="nav-link-item {{ request()->routeIs('admin.videos.*') ? 'active' : '' }}">
+                    <i class="fa-solid fa-film"></i> Kelola Video
                 </a>
                 <form action="{{ route('logout') }}" method="POST" class="d-inline w-100">
                     @csrf
@@ -62,5 +70,6 @@
             </div>
         </main>
     </div>
+
 </body>
 </html>

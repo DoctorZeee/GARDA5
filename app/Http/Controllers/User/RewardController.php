@@ -14,29 +14,34 @@ use Illuminate\Support\Facades\DB;
 class RewardController extends Controller
 {
     /**
-     * FIX: Bungkus dalam DB::transaction() + lockForUpdate()
-     * Mencegah race condition dua request bersamaan lolos cek last_checkin_date.
+     * Daily check-in.
+     *
+     * Perlindungan duplikat berlapis:
+     *  1. Fast-path check sebelum transaksi (hemat lock)
+     *  2. lockForUpdate() di dalam transaksi (cegah race condition)
+     *  3. applyCheckin() di model yang juga memverifikasi ulang
      */
     public function checkin(Request $request): RedirectResponse
     {
-        $user  = auth()->user();
-        $today = Carbon::today()->toDateString();
+        $user = auth()->user();
+
+        // Fast-path: hindari buka transaksi kalau sudah jelas check-in
+        if ($user->point?->hasCheckedInToday()) {
+            return back()->with('error', 'Anda sudah melakukan check-in hari ini.');
+        }
 
         try {
-            DB::transaction(function () use ($user, $today) {
+            DB::transaction(function () use ($user) {
                 $pointRecord = $user->point()
                     ->lockForUpdate()
                     ->firstOrFail();
 
-                if ($pointRecord->last_checkin_date?->toDateString() === $today) {
+                if ($pointRecord->hasCheckedInToday()) {
                     throw new \RuntimeException('already_checked_in');
                 }
 
-                $pointRecord->update([
-                    'last_checkin_date' => $today,
-                    'total_points'      => $pointRecord->total_points + 1,
-                    'total_leaves'      => $pointRecord->total_leaves + 1,
-                ]);
+                // Logika streak & increment ada di model
+                $pointRecord->applyCheckin();
             });
         } catch (\RuntimeException $e) {
             if ($e->getMessage() === 'already_checked_in') {
@@ -45,26 +50,29 @@ class RewardController extends Controller
             throw $e;
         }
 
-        AuditLogger::log('CHECKIN', "User {$user->id} checkin harian +1 poin");
+        AuditLogger::log('CHECKIN', "User {$user->id} check-in harian +1 poin (streak: {$user->fresh()->point->checkin_streak})");
 
         return back()->with('success', 'Check-In Sukses! +1 Poin berhasil diklaim. 🌿');
     }
 
     /**
-     * FIX 1: Cek duplikat via tabel user_video_claims.
-     * FIX 2: Bungkus dalam DB::transaction() untuk atomicity.
-     * Sebelumnya user bisa klaim video sama berkali-kali → poin tidak terbatas.
+     * Klaim reward setelah menonton video.
+     *
+     * Perlindungan duplikat:
+     *  1. Fast-path EXISTS sebelum transaksi
+     *  2. Unique constraint di DB + UniqueConstraintViolationException handler (race condition)
+     *  3. Hanya video yang is_active yang bisa diklaim
      */
     public function claimVideo(Request $request, Video $video): RedirectResponse
     {
+        if (! $video->is_active) {
+            return back()->with('error', 'Video ini tidak tersedia.');
+        }
+
         $user = auth()->user();
 
         // Fast-path check sebelum masuk transaksi
-        $alreadyClaimed = UserVideoClaim::where('user_id', $user->id)
-            ->where('video_id', $video->id)
-            ->exists();
-
-        if ($alreadyClaimed) {
+        if (UserVideoClaim::where('user_id', $user->id)->where('video_id', $video->id)->exists()) {
             return back()->with('error', 'Anda sudah mengklaim video ini sebelumnya.');
         }
 
@@ -72,7 +80,7 @@ class RewardController extends Controller
 
         try {
             DB::transaction(function () use ($user, $video, $reward) {
-                // Unique constraint di DB mencegah race condition dua request bersamaan
+                // INSERT ini akan lempar UniqueConstraintViolationException jika race condition
                 UserVideoClaim::create([
                     'user_id'  => $user->id,
                     'video_id' => $video->id,
@@ -91,11 +99,10 @@ class RewardController extends Controller
                 }
             });
         } catch (\Illuminate\Database\UniqueConstraintViolationException) {
-            // Race condition: request lain sudah insert duluan
             return back()->with('error', 'Anda sudah mengklaim video ini sebelumnya.');
         }
 
-        AuditLogger::log('CLAIM_VIDEO', "User {$user->id} klaim video {$video->id} +{$reward} poin");
+        AuditLogger::log('CLAIM_VIDEO', "User {$user->id} klaim video {$video->id} \"{$video->title}\" +{$reward} poin");
 
         return back()->with('success', "Poin edukasi +{$reward} berhasil diklaim! 🎉");
     }
