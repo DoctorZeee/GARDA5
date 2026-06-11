@@ -2,26 +2,13 @@
 
 @section('content')
 <div class="d-flex justify-content-between align-items-center mb-4">
-    <h4 class="mb-0 text-dark font-weight-bold">
+    <h4 class="mb-0 text-dark fw-bold">
         <i class="fa-solid fa-users text-primary"></i> Daftar Pengguna
     </h4>
     <a href="{{ route('admin.users.create') }}" class="btn btn-primary">
         <i class="fa-solid fa-plus"></i> Tambah Pengguna
     </a>
 </div>
-
-@if(session('success'))
-    <div class="alert alert-success alert-dismissible fade show" role="alert">
-        {{ session('success') }}
-        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-    </div>
-@endif
-@if(session('error'))
-    <div class="alert alert-danger alert-dismissible fade show" role="alert">
-        {{ session('error') }}
-        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-    </div>
-@endif
 
 <div class="table-card-wrapper shadow-sm bg-white p-3 rounded">
     <div class="table-responsive">
@@ -38,9 +25,14 @@
             </thead>
             <tbody>
                 @forelse($users as $user)
-                <tr>
+                <tr @if($user->trashed()) class="table-secondary opacity-75" @endif>
                     <td><code>{{ $user->nik }}</code></td>
-                    <td class="fw-bold">{{ $user->nama_lengkap }}</td>
+                    <td class="fw-bold">
+                        {{ $user->nama_lengkap }}
+                        @if($user->trashed())
+                            <span class="badge bg-secondary ms-1">Dihapus</span>
+                        @endif
+                    </td>
                     <td>{{ $user->email }}</td>
                     <td>
                         @php
@@ -50,34 +42,51 @@
                                 'kader'     => 'bg-warning text-dark',
                                 default     => 'bg-primary',
                             };
+                            $roleLabel = \App\Enums\UserRole::tryFrom($user->role)?->label() ?? ucfirst($user->role);
                         @endphp
-                        <span class="badge {{ $badgeColor }}">{{ ucfirst($user->role) }}</span>
+                        <span class="badge {{ $badgeColor }}">{{ $roleLabel }}</span>
                     </td>
                     <td>{{ $user->wilayah->nama_wilayah ?? '-' }}</td>
                     <td class="text-center">
-                        <a href="{{ route('admin.users.edit', $user->id) }}" class="btn btn-sm btn-warning me-1" title="Edit">
-                            <i class="fa-solid fa-pen-to-square"></i>
-                        </a>
-                        <form action="{{ route('admin.users.destroy', $user->id) }}" method="POST" class="d-inline"
-                              onsubmit="return confirm('Hapus pengguna {{ $user->nama_lengkap }}? Tindakan ini tidak dapat dibatalkan.')">
-                            @csrf
-                            @method('DELETE')
-                            <button type="submit" class="btn btn-sm btn-danger" title="Hapus">
-                                <i class="fa-solid fa-trash"></i>
-                            </button>
-                        </form>
+                        @if($user->trashed())
+                            {{-- Restore soft-deleted user --}}
+                            <form action="{{ route('admin.users.restore', $user->id) }}" method="POST" class="d-inline">
+                                @csrf
+                                <button type="submit" class="btn btn-sm btn-outline-success" title="Pulihkan">
+                                    <i class="fa-solid fa-rotate-left"></i>
+                                </button>
+                            </form>
+                        @else
+                            <a href="{{ route('admin.users.edit', $user->id) }}"
+                               class="btn btn-sm btn-warning me-1" title="Edit">
+                                <i class="fa-solid fa-pen-to-square"></i>
+                            </a>
+
+                            @can('delete', $user)
+                            <form action="{{ route('admin.users.destroy', $user->id) }}" method="POST"
+                                  class="d-inline"
+                                  onsubmit="return confirm('Hapus pengguna {{ addslashes($user->nama_lengkap) }}? Data dapat dipulihkan.')">
+                                @csrf
+                                @method('DELETE')
+                                <button type="submit" class="btn btn-sm btn-danger" title="Hapus">
+                                    <i class="fa-solid fa-trash"></i>
+                                </button>
+                            </form>
+                            @endcan
+                        @endif
                     </td>
                 </tr>
                 @empty
                 <tr>
-                    <td colspan="6" class="text-center text-muted py-4">Belum ada pengguna terdaftar.</td>
+                    <td colspan="6" class="text-center text-muted py-4">
+                        <i class="fa-solid fa-inbox me-2"></i>Belum ada pengguna terdaftar.
+                    </td>
                 </tr>
                 @endforelse
             </tbody>
         </table>
     </div>
 
-    {{-- Pagination --}}
     <div class="d-flex justify-content-center mt-3">
         {{ $users->links() }}
     </div>

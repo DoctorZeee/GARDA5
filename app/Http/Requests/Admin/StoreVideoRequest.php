@@ -2,20 +2,20 @@
 
 namespace App\Http\Requests\Admin;
 
+use App\Enums\UserRole;
 use Illuminate\Foundation\Http\FormRequest;
 
 class StoreVideoRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return $this->user()->role === 'admin';
+        return $this->user()?->role === UserRole::Admin->value;
     }
 
     public function rules(): array
     {
         return [
-            // youtube_id: 11 karakter alfanumerik + tanda - dan _
-            'youtube_id'    => ['required', 'string', 'max:20', 'regex:/^[a-zA-Z0-9_\-]+$/'],
+            'youtube_id'    => ['required', 'string', 'max:20', 'regex:/^[a-zA-Z0-9_\-]+$/', 'unique:videos,youtube_id'],
             'title'         => ['required', 'string', 'max:255'],
             'description'   => ['nullable', 'string', 'max:1000'],
             'points_reward' => ['required', 'integer', 'min:1', 'max:100'],
@@ -27,23 +27,21 @@ class StoreVideoRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'youtube_id.regex' => 'YouTube ID hanya boleh berisi huruf, angka, tanda hubung (-), dan garis bawah (_).',
+            'youtube_id.regex'  => 'YouTube ID hanya boleh berisi huruf, angka, tanda hubung, dan garis bawah.',
+            'youtube_id.unique' => 'Video dengan YouTube ID ini sudah ada di sistem.',
         ];
     }
 
-    /**
-     * Normalisasi sebelum validasi berjalan.
-     */
     protected function prepareForValidation(): void
     {
-        // Jika user paste URL YouTube penuh, ekstrak ID-nya saja
+        // Auto-extract YouTube ID from full URL if pasted
         if ($url = $this->input('youtube_id')) {
             if (preg_match('/(?:youtu\.be\/|v=|embed\/)([a-zA-Z0-9_\-]{11})/', $url, $m)) {
                 $this->merge(['youtube_id' => $m[1]]);
             }
         }
 
-        // Checkbox is_active: hadir = true, tidak hadir = false
+        // Checkbox is_active: present = true, absent = false
         $this->merge(['is_active' => $this->boolean('is_active')]);
     }
 }

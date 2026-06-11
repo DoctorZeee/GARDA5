@@ -9,7 +9,6 @@ class Wilayah extends Model
 {
     protected $fillable = ['nama_wilayah'];
 
-    // Tambahkan relasi ini
     public function users(): HasMany
     {
         return $this->hasMany(User::class);

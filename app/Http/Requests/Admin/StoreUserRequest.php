@@ -2,25 +2,28 @@
 
 namespace App\Http\Requests\Admin;
 
+use App\Enums\UserRole;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rules\Password;
 
 class StoreUserRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return $this->user()->role === 'admin';
+        return $this->user()?->role === UserRole::Admin->value;
     }
 
     public function rules(): array
     {
+        $roles = implode(',', array_column(UserRole::cases(), 'value'));
+
         return [
             'nik'                   => ['required', 'string', 'size:16', 'unique:users,nik', 'regex:/^[0-9]+$/'],
             'nama_lengkap'          => ['required', 'string', 'max:255'],
             'email'                 => ['required', 'email:rfc,dns', 'unique:users,email', 'max:255'],
-            // PERBAIKAN: password wajib ada + confirmed (wajib diisi saat create)
-            'password'              => ['required', 'string', 'min:8', 'confirmed'],
+            'password'              => ['required', 'confirmed', Password::defaults()],
             'password_confirmation' => ['required', 'string'],
-            'role'                  => ['required', 'in:admin,puskesmas,kader,user'],
+            'role'                  => ['required', "in:{$roles}"],
             'tempat_lahir'          => ['required', 'string', 'max:100'],
             'tanggal_lahir'         => ['required', 'date', 'before_or_equal:today'],
             'jenis_kelamin'         => ['required', 'in:L,P'],
@@ -34,13 +37,17 @@ class StoreUserRequest extends FormRequest
     public function messages(): array
     {
         return [
+            'password.min'                    => 'Password minimal 8 karakter.',
+            'password.letters'                => 'Password harus mengandung huruf.',
+            'password.numbers'                => 'Password harus mengandung angka.',
+            'password.uncompromised'          => 'Password terlalu umum atau pernah bocor. Gunakan password yang lebih kuat.',
             'password.confirmed'              => 'Konfirmasi password tidak cocok.',
             'password_confirmation.required'  => 'Konfirmasi password wajib diisi.',
-            'nik.size'                         => 'NIK harus tepat 16 digit.',
-            'nik.regex'                        => 'NIK hanya boleh berisi angka.',
-            'nik.unique'                       => 'NIK sudah terdaftar di sistem.',
-            'email.unique'                     => 'Email sudah digunakan akun lain.',
-            'tekanan_darah.regex'              => 'Format tekanan darah tidak valid. Contoh: 120/80',
+            'nik.size'                        => 'NIK harus tepat 16 digit.',
+            'nik.regex'                       => 'NIK hanya boleh berisi angka.',
+            'nik.unique'                      => 'NIK sudah terdaftar di sistem.',
+            'email.unique'                    => 'Email sudah digunakan akun lain.',
+            'tekanan_darah.regex'             => 'Format tekanan darah tidak valid. Contoh: 120/80',
         ];
     }
 }

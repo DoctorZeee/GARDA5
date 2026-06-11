@@ -2,25 +2,28 @@
 
 namespace App\Models;
 
+use App\Enums\UserRole;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Foundation\Auth\User as Authenticatable;
-use Illuminate\Notifications\Notifiable;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Foundation\Auth\User as Authenticatable;
+use Illuminate\Notifications\Notifiable;
 
 class User extends Authenticatable
 {
-    use HasFactory, Notifiable;
+    use HasFactory, Notifiable, SoftDeletes;
 
     /**
-     * 'role' sengaja TIDAK ada di $fillable.
-     * Mencegah privilege escalation jika di masa depan ada
-     * $user->update($request->validated()) tanpa membuang field role.
-     * Perubahan role harus dilakukan secara eksplisit:
-     *   $user->role = $request->role;
+     * 'role' is intentionally excluded from $fillable.
+     *
+     * Role changes must be explicit:
+     *   $user->role = UserRole::Admin->value;
      *   $user->save();
+     *
+     * This prevents privilege escalation via mass assignment.
      */
     protected $fillable = [
         'nik', 'nama_lengkap', 'email', 'password',
@@ -44,18 +47,75 @@ class User extends Authenticatable
         ];
     }
 
+    // ─── Computed Attributes ─────────────────────────────────────────────────
+
     public function getUmurAttribute(): ?int
     {
         if (empty($this->attributes['tanggal_lahir'])) {
             return null;
         }
+
         return Carbon::parse($this->attributes['tanggal_lahir'])->age;
     }
 
+    /**
+     * Alias for compatibility with components expecting ->name.
+     */
     public function getNameAttribute(): string
     {
         return $this->nama_lengkap ?? '';
     }
+
+    // ─── Role Helpers ─────────────────────────────────────────────────────────
+
+    public function isAdmin(): bool
+    {
+        return $this->role === UserRole::Admin->value;
+    }
+
+    public function isPuskesmas(): bool
+    {
+        return $this->role === UserRole::Puskesmas->value;
+    }
+
+    public function isKader(): bool
+    {
+        return $this->role === UserRole::Kader->value;
+    }
+
+    public function isUser(): bool
+    {
+        return $this->role === UserRole::User->value;
+    }
+
+    public function roleEnum(): ?UserRole
+    {
+        return UserRole::tryFrom($this->role);
+    }
+
+    public function roleLabel(): string
+    {
+        return $this->roleEnum()?->label() ?? $this->role;
+    }
+
+    // ─── Scopes ──────────────────────────────────────────────────────────────
+
+    public function scopeWarga($query)
+    {
+        return $query->where('role', UserRole::User->value);
+    }
+
+    public function scopeByRole($query, string $role)
+    {
+        return $query->where('role', $role);
+    }
+
+    public function scopeInWilayah($query, int $wilayahId)
+    {
+        return $query->where('wilayah_id', $wilayahId);
+    }
+
+    // ─── Relations ───────────────────────────────────────────────────────────
 
     public function wilayah(): BelongsTo
     {
@@ -70,5 +130,15 @@ class User extends Authenticatable
     public function point(): HasOne
     {
         return $this->hasOne(UserPoint::class);
+    }
+
+    public function videoClaims(): HasMany
+    {
+        return $this->hasMany(UserVideoClaim::class);
+    }
+
+    public function auditLogs(): HasMany
+    {
+        return $this->hasMany(AuditLog::class);
     }
 }

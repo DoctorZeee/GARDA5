@@ -5,10 +5,11 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Video extends Model
 {
-    use HasFactory;
+    use HasFactory, SoftDeletes;
 
     protected $fillable = [
         'youtube_id',
@@ -28,27 +29,29 @@ class Video extends Model
         ];
     }
 
-    // ─── Relasi ─────────────────────────────────────────────────────────────
+    // ─── Relations ───────────────────────────────────────────────────────────
 
     public function claims(): HasMany
     {
         return $this->hasMany(UserVideoClaim::class);
     }
 
-    // ─── Scopes ─────────────────────────────────────────────────────────────
+    // ─── Scopes ──────────────────────────────────────────────────────────────
 
     /**
-     * Hanya video aktif, diurutkan sesuai sort_order lalu created_at.
+     * Active videos ordered by sort_order then created_at.
      */
     public function scopeActive($query)
     {
-        return $query->where('is_active', true)->orderBy('sort_order')->orderBy('created_at');
+        return $query->where('is_active', true)
+                     ->orderBy('sort_order')
+                     ->orderBy('created_at');
     }
 
-    // ─── Helpers ────────────────────────────────────────────────────────────
+    // ─── Computed Attributes ─────────────────────────────────────────────────
 
     /**
-     * URL embed YouTube yang aman.
+     * Safe YouTube embed URL.
      */
     public function getEmbedUrlAttribute(): string
     {
@@ -56,10 +59,10 @@ class Video extends Model
     }
 
     /**
-     * URL thumbnail YouTube (hqdefault 480×360).
+     * YouTube hqdefault thumbnail (480×360).
      */
     public function getThumbnailUrlAttribute(): string
     {
-        return "https://img.youtube.com/vi/{$this->youtube_id}/hqdefault.jpg";
+        return 'https://img.youtube.com/vi/' . e($this->youtube_id) . '/hqdefault.jpg';
     }
 }

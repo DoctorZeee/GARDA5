@@ -2,19 +2,22 @@
 
 namespace App\Http\Requests\Admin;
 
+use App\Enums\UserRole;
 use Illuminate\Foundation\Http\FormRequest;
 
 class UpdateVideoRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return $this->user()->role === 'admin';
+        return $this->user()?->role === UserRole::Admin->value;
     }
 
     public function rules(): array
     {
+        $videoId = $this->route('video')->id;
+
         return [
-            'youtube_id'    => ['required', 'string', 'max:20', 'regex:/^[a-zA-Z0-9_\-]+$/'],
+            'youtube_id'    => ['required', 'string', 'max:20', 'regex:/^[a-zA-Z0-9_\-]+$/', "unique:videos,youtube_id,{$videoId}"],
             'title'         => ['required', 'string', 'max:255'],
             'description'   => ['nullable', 'string', 'max:1000'],
             'points_reward' => ['required', 'integer', 'min:1', 'max:100'],
@@ -26,7 +29,8 @@ class UpdateVideoRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'youtube_id.regex' => 'YouTube ID hanya boleh berisi huruf, angka, tanda hubung (-), dan garis bawah (_).',
+            'youtube_id.regex'  => 'YouTube ID hanya boleh berisi huruf, angka, tanda hubung, dan garis bawah.',
+            'youtube_id.unique' => 'Video dengan YouTube ID ini sudah ada di sistem.',
         ];
     }
 

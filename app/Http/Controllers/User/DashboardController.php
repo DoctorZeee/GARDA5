@@ -4,7 +4,6 @@ namespace App\Http\Controllers\User;
 
 use App\Http\Controllers\Controller;
 use App\Models\HealthLog;
-use App\Models\UserVideoClaim;
 use App\Models\Video;
 use Carbon\Carbon;
 
@@ -18,15 +17,12 @@ class DashboardController extends Controller
             ->whereDate('tanggal_input', Carbon::today())
             ->exists();
 
-        $hasCheckedInToday = $user->point &&
-            $user->point->last_checkin_date?->toDateString() === Carbon::today()->toDateString();
+        $hasCheckedInToday = $user->point?->hasCheckedInToday() ?? false;
 
-        // FIX: Hanya tampilkan video yang belum diklaim user ini
-        $claimedVideoIds = UserVideoClaim::where('user_id', $user->id)
-            ->pluck('video_id');
-
-        $videos = Video::where('is_active', true)
-            ->whereNotIn('id', $claimedVideoIds)
+        // FIX: Use whereDoesntHave() to eliminate the extra pluck() query (N+1 optimisation)
+        // This produces a single SQL with a NOT EXISTS subquery instead of two round trips.
+        $videos = Video::active()
+            ->whereDoesntHave('claims', fn ($q) => $q->where('user_id', $user->id))
             ->get();
 
         return view('user.dashboard', compact('user', 'hasLoggedToday', 'hasCheckedInToday', 'videos'));

@@ -11,15 +11,19 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware) {
-        // Inject Security Headers untuk semua request secara global
+        // Inject Security Headers globally for all requests
         $middleware->append(\App\Http\Middleware\SecurityHeaders::class);
 
-        // Registrasi alias untuk route
+        // Middleware aliases
         $middleware->alias([
-            'role' => \App\Http\Middleware\RoleMiddleware::class,
-            'no-cache' => \App\Http\Middleware\PreventBackHistory::class, // Alias keamanan session
+            'role'     => \App\Http\Middleware\RoleMiddleware::class,
+            'no-cache' => \App\Http\Middleware\PreventBackHistory::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {
         //
-    })->create();
+    })
+    ->withCommands([
+        \App\Console\Commands\CreateAdminCommand::class,
+    ])
+    ->create();
