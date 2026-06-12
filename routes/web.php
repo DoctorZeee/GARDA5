@@ -24,17 +24,30 @@ Route::middleware(['auth', 'no-cache'])->group(function () {
 
     Route::post('/logout', [AuthController::class, 'logout'])
         ->name('logout')
-        ->middleware('throttle:10,1');   // Prevent logout-flood
+        ->middleware('throttle:10,1');
 
     // ── Admin ──────────────────────────────────────────────────────────────
     Route::middleware('role:admin')->prefix('admin')->name('admin.')->group(function () {
         Route::get('/dashboard', [\App\Http\Controllers\Admin\DashboardController::class, 'index'])
             ->name('dashboard');
 
+        // User CRUD
         Route::resource('users', \App\Http\Controllers\Admin\UserController::class);
         Route::post('/users/{id}/restore', [\App\Http\Controllers\Admin\UserController::class, 'restore'])
             ->name('users.restore');
 
+        // ── Individual User Monitoring (Part 2) ───────────────────────────
+        Route::get('/users/{user}/detail',
+            [\App\Http\Controllers\Admin\UserDetailController::class, 'show'])
+            ->name('users.detail');
+
+        // Hard Reset (Part 4) — POST with confirmation
+        Route::post('/users/{user}/hard-reset',
+            [\App\Http\Controllers\Admin\UserDetailController::class, 'hardReset'])
+            ->name('users.hard-reset')
+            ->middleware('throttle:10,1');  // Prevent accidental rapid-fire
+
+        // Videos
         Route::resource('videos', \App\Http\Controllers\Admin\VideoController::class);
     });
 
